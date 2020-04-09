@@ -34,7 +34,7 @@ class download_and_upload(threading.Thread):
 
     def run(self):
         try:
-            #print('开始下载',self.path)
+            print('开始下载',self.path)
             file = requests.get(self.link)
             s3_client.put_object(Body=file.content, Bucket=self.bucket, Key=self.path)
         except Exception as e:
@@ -68,7 +68,7 @@ def multi_thread(url, maxThreads, logger, bucket, prefix):
     print('dealing with:', url)
     
     download = requests.get(url).text
-    start    = download.find('000kb') - 1
+    start    = download.rfind('\n')+1
     newlink  = download[start:]
     new_url  = url[:url.find('index.m3u8')] + newlink  #'http://video2.youxijian.com:8091/20200305/40AEN3QJ/1000kb/hls/index.m3u8'
     
@@ -135,6 +135,13 @@ def check_error(bucket, prefix, max_thread = 300):
             t.start()
         q.join()
 
+
+def delete_1000kb_hls(url):
+    if 'kb/hls' in url:
+        return url[:url.rfind('/',0,url.find('kb/hls'))]+'/index.m3u8'
+    else:
+        return url
+    
 def main():
     setup_logger('log',r'%s.log'%time.strftime("%Y-%m-%d-%H-%M-%S", time.localtime()))
     logger = logging.getLogger('log')
@@ -144,7 +151,8 @@ def main():
 
     #logging.info('main task starts')
     for url in all_m3u8_lists:
-        multi_thread(url, maxThreads, logger, bucket, prefix)
+        if url:
+            multi_thread(delete_1000kb_hls(url), maxThreads, logger, bucket, prefix)
 
 if __name__ == '__main__':  
     #--------------------------------自修改信息区域------------------------------#
