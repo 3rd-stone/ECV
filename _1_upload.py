@@ -179,10 +179,10 @@ def main():
 if __name__ == '__main__':  
     #--------------------------------自修改信息区域------------------------------#
     
-    file_path = 'video2-naibago-com-part2.txt'
+    file_path = 'xxx.txt'
     maxThreads = 800
-    bucket = 'test--20200310'
-    prefix = 'video2-naibago-com/'   #最前面不要/,最后要/，比如 abc/123/
+    bucket = 'xxx'
+    prefix = 'xxx/'   #最前面不要/,最后要/，比如 abc/123/
     
     #--------------------------------------------------------------------------#
 
