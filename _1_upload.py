@@ -9,7 +9,7 @@ Created on Thu Mar 12 11:45:32 2020
 
 modified 2020-03-24
 1. 增加对1000kb/hls/index.m3u8 的上传
-2. 404状态的文件不会上传，会记录链接给log文件
+2. 404/502状态的文件不会上传，会记录链接给log文件
 """
 
 import threading
@@ -34,9 +34,10 @@ class download_and_upload(threading.Thread):
 
     def run(self):
         try:
-            print('开始下载',self.path)
+            #print('开始下载',self.path)
             file = requests.get(self.link)
-            s3_client.put_object(Body=file.content, Bucket=self.bucket, Key=self.path)
+            if file.status_code == 200:
+                s3_client.put_object(Body=file.content, Bucket=self.bucket, Key=self.path)
         except Exception as e:
             print(e)
             self.logger.error(self.link)
@@ -93,6 +94,24 @@ def multi_thread(url, maxThreads, logger, bucket, prefix):
     q.join()
     #print('over')
 
+def multi_thread_playlist(url, maxThreads, logger, bucket, prefix):
+    q = queue.Queue(maxThreads)
+    print('dealing with:', url)
+    
+    pre = url[:url.rfind('/',0,url.find('.m3u8'))+1]
+    download = requests.get(url).text.split('\n')
+
+    all_ts_links = (pre + i for i in filter(lambda x:len(x) > 0 and x[0] != '#' and x[-3:] == '.ts',download))
+    
+    t0 = download_and_upload(url, q, logger, bucket, prefix)
+    t0.start()
+
+    for ts_link in all_ts_links:
+        q.put(ts_link)
+        t = download_and_upload(ts_link, q, logger, bucket, prefix)
+        t.start()
+    q.join()
+
 def check_error(bucket, prefix, max_thread = 300):
     def get_latest_log(log_lists):
         latest_time = None
@@ -138,7 +157,8 @@ def check_error(bucket, prefix, max_thread = 300):
 
 def delete_1000kb_hls(url):
     if 'kb/hls' in url:
-        return url[:url.rfind('/',0,url.find('kb/hls'))]+'/index.m3u8'
+        number = url.find('kb/hls')
+        return url[:url.rfind('/',0,number)] + url[number+6:]
     else:
         return url
     
@@ -151,16 +171,18 @@ def main():
 
     #logging.info('main task starts')
     for url in all_m3u8_lists:
-        if url:
+        if url and 'index.m3u8' in url:
             multi_thread(delete_1000kb_hls(url), maxThreads, logger, bucket, prefix)
+        elif url and 'playlist.m3u8' in url:
+            multi_thread_playlist(url, maxThreads, logger, bucket, prefix) 
 
 if __name__ == '__main__':  
     #--------------------------------自修改信息区域------------------------------#
     
-    file_path = 'btt1.txt'
-    maxThreads = 300
+    file_path = 'video2-naibago-com-part2.txt'
+    maxThreads = 800
     bucket = 'test--20200310'
-    prefix = 'video1-hsanhl-com/'   #最前面不要/,最后要/，比如 abc/123/
+    prefix = 'video2-naibago-com/'   #最前面不要/,最后要/，比如 abc/123/
     
     #--------------------------------------------------------------------------#
 
