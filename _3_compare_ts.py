@@ -36,11 +36,11 @@ class multi_compare(threading.Thread):
             self.all_s3_ts_numbers = self.get_s3_numbers(self.bucket, self.prefix, self.path)
             if self.all_ts_numbers == 0:
                 self.logger.error('502-'+self.url)               
-            elif self.all_s3_ts_numbers-1 != self.all_ts_numbers:
+            elif self.all_s3_ts_numbers-1 == self.all_ts_numbers or self.all_s3_ts_numbers-2 == self.all_ts_numbers:
+                print('yes,{0},numbers:{1}'.format(self.url, self.all_ts_numbers))
+            else:
                 print('不相等,{0},s3:{1},should be:{2}'.format(self.url,self.all_s3_ts_numbers, self.all_ts_numbers))
                 self.logger.error(self.url)
-            else:
-                print('yes,{0},numbers:{1}'.format(self.url, self.all_ts_numbers))
         except Exception as e:
             self.logger.error(self.url)
         finally:
