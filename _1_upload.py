@@ -68,10 +68,13 @@ def multi_thread(url, maxThreads, logger, bucket, prefix):
     q = queue.Queue(maxThreads)
     print('dealing with:', url)
     
-    download = requests.get(url).text
-    start    = download.rfind('\n')+1
-    newlink  = download[start:]
-    new_url  = url[:url.find('index.m3u8')] + newlink  #'http://video2.youxijian.com:8091/20200305/40AEN3QJ/1000kb/hls/index.m3u8'
+    if '/hls/' in url:
+        new_url = url
+    else:
+        download = requests.get(url).text
+        start    = download.rfind('\n')+1
+        newlink  = download[start:]
+        new_url  = url[:url.find('index.m3u8')] + newlink  #'http://video2.youxijian.com:8091/20200305/40AEN3QJ/1000kb/hls/index.m3u8'
     
     t00 = download_and_upload(new_url, q, logger, bucket, prefix)
     t00.start()
