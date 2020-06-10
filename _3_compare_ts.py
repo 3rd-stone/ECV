@@ -51,7 +51,7 @@ class multi_compare(threading.Thread):
         return sum(1 for _ in self.bucket.objects.filter(Prefix=self.prefix+self.path))
 
     def get_information(self):
-        if 'index.m3u8' in self.url:
+        if 'index.m3u8' in self.url and '/hls/' not in self.url:
             download = requests.get(self.url).text
             start    = download.rfind('\n')+1
             newlink  = download[start:]
